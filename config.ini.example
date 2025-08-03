@@ -1,0 +1,20 @@
+# config.ini.example
+# Copy this file to a new file named "config.ini" and set your preferences.
+# The config.ini file is excluded from Git version control by .gitignore.
+#
+# このファイルをコピーして「config.ini」という名前のファイルを作成し、
+# 取得したい再生リストの情報などを設定してください。
+# config.iniファイルは .gitignore によってGitの管理対象から除外されます。
+
+[YouTube]
+# Set the ID of the YouTube playlist you want to fetch.
+# 情報を取得したいYouTubeの再生リストIDを設定します
+playlist_id = YOUR_PLAYLIST_ID_HERE
+
+# Set the playlist name to be recorded in the CSV file.
+# CSVファイルに記録するプレイリスト名を設定します
+playlist_name = YOUR_PLAYLIST_NAME_HERE
+
+# Set the filename for the CSV where video information will be saved.
+# 動画情報を保存するCSVファイルの名前を設定します
+csv_filename = movies.csv
