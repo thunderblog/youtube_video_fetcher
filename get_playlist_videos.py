@@ -7,7 +7,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 from dotenv import load_dotenv
 
-def save_playlist_videos_to_csv(api_key, playlist_id, playlist_name, csv_filename):
+def save_playlist_videos_to_csv(api_key, playlist_id, playlist_name, csv_filepath):
     """
     指定されたYouTube再生リストの動画情報を取得し、指定されたCSVファイルに追記します。
     重複するビデオIDは追加しません。
@@ -17,7 +17,7 @@ def save_playlist_videos_to_csv(api_key, playlist_id, playlist_name, csv_filenam
         # Step 0: 既存のCSVファイルからビデオIDを読み込む（重複チェックのため）
         existing_video_ids = set()
         try:
-            with open(csv_filename, mode="r", newline="", encoding="utf-8-sig") as f:
+            with open(csv_filepath, mode="r", newline="", encoding="utf-8-sig") as f:
                 reader = csv.reader(f)
                 header = next(reader) # ヘッダーをスキップ
                 for row in reader:
@@ -25,7 +25,7 @@ def save_playlist_videos_to_csv(api_key, playlist_id, playlist_name, csv_filenam
                         # 5列目（ビデオID）のデータを重複チェック用セットに追加
                         existing_video_ids.add(row[4]) 
         except FileNotFoundError:
-            print(f"'{csv_filename}' が見つかりません。新規に作成します。")
+            print(f"'{csv_filepath}' が見つかりません。新規に作成します。")
 
         # YouTube APIクライアントをビルド
         youtube = googleapiclient.discovery.build(
@@ -80,9 +80,9 @@ def save_playlist_videos_to_csv(api_key, playlist_id, playlist_name, csv_filenam
                     video_details[video_id]["tags"] = item["snippet"]["tags"]
 
         # Step 3: 取得した情報をCSVファイルに追記する
-        write_header = not os.path.exists(csv_filename)
+        write_header = not os.path.exists(csv_filepath)
         
-        with open(csv_filename, mode="a", newline="", encoding="utf-8-sig") as f:
+        with open(csv_filepath, mode="a", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
             if write_header:
                 # 指定された順番でヘッダーを定義
@@ -101,7 +101,7 @@ def save_playlist_videos_to_csv(api_key, playlist_id, playlist_name, csv_filenam
                 ]
                 writer.writerow(row)
         
-        print(f"完了しました。{len(video_details)}件の動画データを '{csv_filename}' に追加しました。")
+        print(f"完了しました。{len(video_details)}件の動画データを '{csv_filepath}' に追加しました。")
 
     except googleapiclient.errors.HttpError as e:
         print(f"APIリクエスト中にエラーが発生しました: {e}")
@@ -129,11 +129,20 @@ if __name__ == "__main__":
         playlist_name = "Google Developers Japan"
         csv_filename = "movies_default.csv"
 
+    # 出力用フォルダの設定
+    OUTPUT_DIR = "output"
+    # フォルダが存在しない場合は作成
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    
+    # CSVファイルのフルパスを生成
+    csv_filepath = os.path.join(OUTPUT_DIR, csv_filename)
+
     if not API_KEY:
         print("エラー: .envファイルに 'YOUTUBE_API_KEY' を設定してください。")
     elif not playlist_id:
         print("エラー: プレイリストIDが設定されていません。")
     else:
-        save_playlist_videos_to_csv(API_KEY, playlist_id, playlist_name, csv_filename)
+        save_playlist_videos_to_csv(API_KEY, playlist_id, playlist_name, csv_filepath)
 
 # %%

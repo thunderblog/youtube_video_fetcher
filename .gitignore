@@ -218,3 +218,6 @@ __pycache__/
 
 # Config
 config.ini
+
+#output csv
+output/
