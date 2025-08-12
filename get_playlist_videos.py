@@ -20,18 +20,27 @@ def load_settings(config_file: str = 'config.ini') -> Dict[str, Optional[str]]:
         config.read(config_file, encoding='utf-8')
         playlist_id: Optional[str] = config.get('YouTube', 'playlist_id')
         playlist_name: Optional[str] = config.get('YouTube', 'playlist_name')
-        csv_filename: Optional[str] = config.get('YouTube', 'csv_filename')
+        try:
+            csv_filename: Optional[str] = config.get('YouTube', 'csv_filename')
+        except configparser.NoOptionError:
+            csv_filename = None
     except (FileNotFoundError, configparser.Error):
         print(f"'{config_file}' が見つからないか不適切です。デフォルト設定を使用します。")
         playlist_id = "PLOU2XLYxmsIKC8eODk_RjI5gG__v2EX1B"
         playlist_name = "Google Developers Japan"
+        csv_filename = None
+    
+    # csv_filenameが未設定の場合、playlist_name + '.csv' を使用
+    if not csv_filename and playlist_name:
+        csv_filename = f"{playlist_name}.csv"
+    elif not csv_filename:
         csv_filename = "movies_default.csv"
     
     output_dir = "output"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    csv_filepath = os.path.join(output_dir, csv_filename) if csv_filename else None
+    csv_filepath = os.path.join(output_dir, csv_filename)
 
     return {
         "api_key": api_key,
@@ -55,8 +64,15 @@ def get_existing_video_ids(filepath: str) -> Set[str]:
         return {row[4] for row in reader if row} # 5列目(ビデオID)
 
 
+def is_private_video(item: Dict) -> bool:
+    """動画がPrivate Videoかどうかを判定する"""
+    snippet = item.get("snippet", {})
+    title = snippet.get("title", "")
+    return title == "Private video" or title == "Deleted video"
+
+
 def fetch_playlist_videos(youtube: Any, playlist_id: str) -> List[Dict]:
-    """再生リストから全ての動画情報を取得する"""
+    """再生リストから全ての動画情報を取得する（Private Videoは除外）"""
     video_items: List[Dict] = []
     next_page_token: Optional[str] = None
     while True:
@@ -67,7 +83,10 @@ def fetch_playlist_videos(youtube: Any, playlist_id: str) -> List[Dict]:
             pageToken=next_page_token
         )
         response: Dict = request.execute()
-        video_items.extend(response.get("items", []))
+        items = response.get("items", [])
+        # Private Videoを除外
+        filtered_items = [item for item in items if not is_private_video(item)]
+        video_items.extend(filtered_items)
         next_page_token = response.get("nextPageToken")
         if not next_page_token:
             break
