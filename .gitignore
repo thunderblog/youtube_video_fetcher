@@ -225,3 +225,6 @@ CLAUDE.md
 classify_videos*.py
 old/
 settings.local.json
+
+#memo
+備忘録.txt
